@@ -1,5 +1,14 @@
-FROM php:7.2-apache
+FROM php:7.2-fpm-alpine
 
+### next is based on: https://github.com/docker-library/wordpress/php7.2/fpm-alpine/Dockerfile
+# docker-entrypoint.sh dependencies
+RUN apk add --no-cache \
+# in theory, docker-entrypoint.sh is POSIX-compliant, but priority is a working, consistent image
+		bash \
+# BusyBox sed is not sufficient for some of our sed expressions
+		sed
+
+### own code
 # Use the default production configuration
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 
@@ -23,8 +32,9 @@ RUN yes | pecl install xdebug \
     && echo "zend_extension=$(find /usr/local/lib/php/extensions/ -name xdebug.so)" > /usr/local/etc/php/conf.d/xdebug.ini \
     && echo "xdebug.remote_enable=on" >> /usr/local/etc/php/conf.d/xdebug.ini \
     && echo "xdebug.remote_autostart=off" >> /usr/local/etc/php/conf.d/xdebug.ini
+### end own code
 
-### next is based on: https://github.com/docker-library/wordpress/php7.2/apache/Dockerfile
+### next is based on: https://github.com/docker-library/wordpress/php7.2/fpm-alpine/Dockerfile
 # install the PHP extensions we need for WP
 RUN set -ex; \
 	\
