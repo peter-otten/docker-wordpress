@@ -1,12 +1,13 @@
 FROM php:7.2-fpm-alpine
 
-### next is based on: https://github.com/docker-library/wordpress/php7.2/fpm-alpine/Dockerfile
+### next is based on: https://github.com/docker-library/wordpress/blob/master/php7.2/fpm-alpine/Dockerfile
 # docker-entrypoint.sh dependencies
 RUN apk add --no-cache \
 # in theory, docker-entrypoint.sh is POSIX-compliant, but priority is a working, consistent image
 		bash \
 # BusyBox sed is not sufficient for some of our sed expressions
 		sed
+### end
 
 ### own code
 # Use the default production configuration
@@ -34,33 +35,26 @@ RUN yes | pecl install xdebug \
     && echo "xdebug.remote_autostart=off" >> /usr/local/etc/php/conf.d/xdebug.ini
 ### end own code
 
-### next is based on: https://github.com/docker-library/wordpress/php7.2/fpm-alpine/Dockerfile
+### next is based on: https://github.com/docker-library/wordpress/blob/master/php7.2/fpm-alpine/Dockerfile
 # install the PHP extensions we need for WP
 RUN set -ex; \
 	\
-	savedAptMark="$(apt-mark showmanual)"; \
-	\
-	apt-get update; \
-	apt-get install -y --no-install-recommends \
-		libjpeg-dev \
+	apk add --no-cache --virtual .build-deps \
+		libjpeg-turbo-dev \
 		libpng-dev \
 	; \
 	\
 	docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr; \
+	docker-php-ext-install gd; \
 	\
-# reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
-	apt-mark auto '.*' > /dev/null; \
-	apt-mark manual $savedAptMark; \
-	ldd "$(php -r 'echo ini_get("extension_dir");')"/*.so \
-		| awk '/=>/ { print $3 }' \
-		| sort -u \
-		| xargs -r dpkg-query -S \
-		| cut -d: -f1 \
-		| sort -u \
-		| xargs -rt apt-mark manual; \
-	\
-	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
-	rm -rf /var/lib/apt/lists/*
+	runDeps="$( \
+		scanelf --needed --nobanner --format '%n#p' --recursive /usr/local/lib/php/extensions \
+			| tr ',' '\n' \
+			| sort -u \
+			| awk 'system("[ -e /usr/local/lib/" $1 " ]") == 0 { next } { print "so:" $1 }' \
+	)"; \
+	apk add --virtual .wordpress-phpexts-rundeps $runDeps; \
+	apk del .build-deps
 
 # set recommended PHP.ini settings
 # see https://secure.php.net/manual/en/opcache.installation.php
@@ -73,12 +67,10 @@ RUN { \
 		echo 'opcache.enable_cli=1'; \
 	} > /usr/local/etc/php/conf.d/opcache-recommended.ini
 
-RUN a2enmod rewrite expires
-
 VOLUME /var/www/html
 
-ENV WORDPRESS_VERSION 5.0
-ENV WORDPRESS_SHA1 67758958f14c1dcefe37ce6558d470a4e142893b
+ENV WORDPRESS_VERSION 5.0.1
+ENV WORDPRESS_SHA1 298bd17feb7b4948e7eb8fa0cde17438a67db19a
 
 RUN set -ex; \
 	curl -o wordpress.tar.gz -fSL "https://wordpress.org/wordpress-${WORDPRESS_VERSION}.tar.gz"; \
@@ -91,4 +83,4 @@ RUN set -ex; \
 COPY docker-entrypoint.sh /usr/local/bin/
 
 ENTRYPOINT ["docker-entrypoint.sh"]
-CMD ["apache2-foreground"]
+CMD ["php-fpm"]
