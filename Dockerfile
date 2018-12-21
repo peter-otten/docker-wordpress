@@ -26,6 +26,7 @@ RUN apk --update add git \
 RUN docker-php-ext-install mysqli mbstring pdo pdo_mysql tokenizer xml opcache zip
 
 RUN pecl channel-update pecl.php.net
+RUN pecl install libevent
 RUN pecl install memcached
 RUN docker-php-ext-enable memcached
 
