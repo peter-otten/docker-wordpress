@@ -82,5 +82,9 @@ RUN set -ex; \
 
 COPY docker-entrypoint.sh /usr/local/bin/
 
+# Install composer
+ENV COMPOSER_ALLOW_SUPERUSER 1
+RUN curl --silent --show-error https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
 ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["php-fpm"]
