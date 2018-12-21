@@ -25,8 +25,12 @@ RUN apk --update add git \
 
 RUN docker-php-ext-install mysqli mbstring pdo pdo_mysql tokenizer xml opcache zip
 
-RUN pecl channel-update pecl.php.net && pecl install memcached && docker-php-ext-enable memcached
-RUN pecl install mcrypt-1.0.1 && docker-php-ext-enable mcrypt
+RUN pecl channel-update pecl.php.net
+RUN pecl install memcached
+RUN docker-php-ext-enable memcached
+
+RUN pecl install mcrypt-1.0.1
+RUN docker-php-ext-enable mcrypt
 
 ## install xdebug, make sure the ini is set
 RUN yes | pecl install xdebug \
