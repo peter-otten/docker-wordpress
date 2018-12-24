@@ -82,10 +82,11 @@ RUN set -ex; \
 
 ENV PATH "$PATH:/usr/local/bin/"
 COPY docker-entrypoint.sh /usr/local/bin/
+RUN ln -s usr/local/bin/docker-entrypoint.sh / # backwards compat
 
 # Install composer
 ENV COMPOSER_ALLOW_SUPERUSER 1
 RUN curl --silent --show-error https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-ENTRYPOINT ["docker-entrypoint.sh"]
+ENTRYPOINT ["SH", "docker-entrypoint.sh"]
 CMD ["php-fpm"]
