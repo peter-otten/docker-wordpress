@@ -80,6 +80,7 @@ RUN set -ex; \
 	rm wordpress.tar.gz; \
 	chown -R www-data:www-data /usr/src/wordpress
 
+ENV PATH "$PATH:/usr/local/bin/"
 COPY docker-entrypoint.sh /usr/local/bin/
 
 # Install composer
